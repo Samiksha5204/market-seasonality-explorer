@@ -21,6 +21,16 @@ An interactive financial calendar visualizing market volatility, liquidity, and 
 ### Prerequisites:
 - Node.js (v18 or above)
 - npm
+- Go to this URL in your browser:(if Binance request API is not working)
+  https://cors-anywhere.herokuapp.com/corsdemo
+
+Click the button:
+Request temporary access to the demo server
+
+You’ll see:
+"Temporary access granted..."
+
+Now go back to your React app and refresh the page — the Binance request will work.
 
 ### Steps:
 
@@ -44,4 +54,13 @@ lucide-react
 Sample volatility, liquidity, and performance data is mocked in the calendar.
 Chart uses Binance public API for crypto price data.
 Market data shown for BTC, ETH, and BNB only.
+
+3. Data Scenarios & Edge Cases
+
+- Normal: Full data available (e.g., 2025-01-01)
+- Missing indicators: Shown as “N/A”
+- API failure: Console error, fallback UI
+- Invalid/Out-of-range date: Empty dashboard but app stays stable
+- Responsive layout on small screens
+- Dark mode contrast tested and adjusted
 
