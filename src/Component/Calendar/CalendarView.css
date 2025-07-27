@@ -1,0 +1,14 @@
+.calendar-table td {
+  transition: background 0.3s ease;
+}
+
+.calendar-table td:hover {
+  background-color: #f0f8ff;
+}
+
+.calendar-cell {
+  height: 70px;
+  vertical-align: middle;
+  font-weight: 500;
+  position: relative;
+}
