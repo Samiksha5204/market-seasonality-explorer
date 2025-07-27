@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import useOrderBook from "../../hooks/useOrderBook";
 import { motion } from "framer-motion";
+
 // Static data
 const volatilityData = {
   "2025-07-01": 0.2,
@@ -42,13 +43,12 @@ const DashboardPanel = () => {
 
   const [selectedAsset, setSelectedAsset] = useState("BTCUSDT");
   const { bids, asks } = useOrderBook(selectedAsset);
-  // Categorization helpers
+
   const getVolatilityCategory = (value) => {
     if (value < 0.3) return "Low";
     if (value < 0.6) return "Medium";
     return "High";
   };
-
   const getLiquidityCategory = (value) => {
     if (value < 0.4) return "Low";
     if (value < 0.7) return "Medium";
@@ -59,7 +59,7 @@ const DashboardPanel = () => {
   const l = liquidityData[date];
   const p = performanceData[date];
 
-  // Fetch BTC data for chart
+  // Fetch historical price chart data for the selected asset and date
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,8 +81,8 @@ const DashboardPanel = () => {
           }
         );
 
-        const raw = response?.data || [];
-        const formatted = raw.map((d) => ({
+        // Format response for chart
+        const formatted = response?.data.map((d) => ({
           openTime: new Date(d[0]),
           close: parseFloat(d[4]),
           date: new Date(d[0]).toISOString().split("T")[0],
@@ -99,7 +99,11 @@ const DashboardPanel = () => {
 
     fetchData();
   }, [date, selectedAsset]);
+
+  // Extract close price for selected date
   const selectedClose = data?.find((d) => d.date === date)?.close;
+
+  // Utility: download metrics + chart data as CSV
   const downloadCSV = () => {
     const rows = [
       ["Metric", "Value"],
@@ -123,110 +127,90 @@ const DashboardPanel = () => {
     link.download = `MarketData_${date}.csv`;
     link.click();
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.6 }}
     >
+      {/* Header Section */}
       <div className="d-flex justify-content-between">
-        <h3 className="text-success mb-3">Dashboard – {date}</h3>
-        <div className="d-flex justify-content-between ">
-        {/* <div className="mb-3"> */}
+        <h3 className="text-success mb-3">Dashboard {date}</h3>
+        <div className="d-flex justify-content-between">
           <h5 className="mb-2 fw-semibold text-secondary pe-2">
-            📈 Select Asset to View Market Data
+            Select Asset to View Market Data
           </h5>
-          <div className="d-flex justify-content-start align-items-center pt-0">
-            <select
-              className="form-select w-auto"
-              value={selectedAsset}
-              onChange={(e) => setSelectedAsset(e.target.value)}
-            >
-              <option value="BTCUSDT">BTC</option>
-              <option value="ETHUSDT">ETH</option>
-              <option value="BNBUSDT">BNB</option>
-            </select>
-          {/* </div> */}
-        </div>
+          {/* Asset Selector Dropdown */}
+          <select
+            className="form-select w-auto"
+            value={selectedAsset}
+            onChange={(e) => setSelectedAsset(e.target.value)}
+          >
+            <option value="BTCUSDT">BTC</option>
+            <option value="ETHUSDT">ETH</option>
+            <option value="BNBUSDT">BNB</option>
+          </select>
         </div>
       </div>
+
+      {/* Navigation + CSV Download */}
       <Link to="/" className="btn btn-sm btn-outline-primary mb-3">
-        ⬅ Back to Calendar
+        Back to Calendar
       </Link>
       <button
         className="btn btn-sm btn-success mb-3 ms-2"
         onClick={downloadCSV}
       >
-        ⬇ Download CSV
+        Download CSV
       </button>
+
+      {/* Metrics Summary */}
       <motion.div
         className="card p-3 mb-4 bg-light"
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
       >
-      <h5 className="mb-3 fw-bold text-dark dark-mode-text-light">📈 Market Summary</h5>
+        <h5 className="mb-3 fw-bold text-dark dark-mode-text-light">
+          Market Summary
+        </h5>
         <div className="row">
-          <div className="col-md-3 fw-bold text-dark dark-mode-text-light">
+          <div className="col-md-3 fw-bold text-dark">
             <strong>Volatility:</strong> {v ?? "N/A"}{" "}
             <span className="badge bg-info">
               {v ? getVolatilityCategory(v) : ""}
             </span>
           </div>
-          <div className="col-md-3 fw-bold text-dark dark-mode-text-light">
+          <div className="col-md-3 fw-bold text-dark">
             <strong>Liquidity:</strong> {l ?? "N/A"}{" "}
             <span className="badge bg-secondary">
               {l ? getLiquidityCategory(l) : ""}
             </span>
           </div>
-          <div className="col-md-3 fw-bold text-dark dark-mode-text-light">
+          <div className="col-md-3 fw-bold text-dark">
             <strong>Performance:</strong>{" "}
             <span className={p > 0 ? "text-success" : "text-danger"}>
               {p !== undefined ? `${(p * 100).toFixed(2)}%` : "N/A"}
             </span>
           </div>
-          <div className="col-md-3 fw-bold text-dark dark-mode-text-light">
+          <div className="col-md-3 fw-bold text-dark">
             <strong>BTC Close:</strong>{" "}
             {selectedClose ? `$${selectedClose.toFixed(2)}` : "N/A"}
           </div>
         </div>
       </motion.div>
-      {/* Market Summary Section */}
-      {/* <div className="card p-3 mb-3">
-        <h5 className="mb-3">Market Summary</h5>
-        <ul className="list-group">
-          <li className="list-group-item">
-            <strong>Volatility:</strong>{" "}
-            {v !== undefined ? `${v} (${getVolatilityCategory(v)})` : "N/A"}
-          </li>
-          <li className="list-group-item">
-            <strong>Liquidity:</strong>{" "}
-            {l !== undefined ? `${l} (${getLiquidityCategory(l)})` : "N/A"}
-          </li>
-          <li className="list-group-item">
-            <strong>Performance:</strong>{" "}
-            {p !== undefined ? (
-              <span style={{ color: p >= 0 ? "green" : "red" }}>
-                {(p * 100).toFixed(2)}%
-              </span>
-            ) : (
-              "N/A"
-            )}
-          </li>
-        </ul>
-      </div> */}
 
-      {/* Chart */}
+      {/* Conditional: No Chart Data */}
       {!loading && data?.length === 0 && (
         <p>No data available for selected date.</p>
       )}
 
+      {/* Price Line Chart */}
       {!loading && data?.length > 0 && (
         <motion.div
           className="card p-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
         >
           <h5 className="mb-3">
             {selectedAsset.replace("USDT", "")} Close Price (Sample)
@@ -248,12 +232,13 @@ const DashboardPanel = () => {
         </motion.div>
       )}
 
+      {/* Order Book Tables */}
       <div className="row mt-4">
+        {/* Top Bids */}
         <motion.div
           className="col-md-6"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
         >
           <h5 className="text-success">Top Buy Orders (Bids)</h5>
           <table className="table table-sm table-bordered">
@@ -276,11 +261,11 @@ const DashboardPanel = () => {
           </table>
         </motion.div>
 
+        {/* Top Asks */}
         <motion.div
           className="col-md-6"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7, duration: 0.4 }}
         >
           <h5 className="text-danger">Top Sell Orders (Asks)</h5>
           <table className="table table-sm table-bordered">

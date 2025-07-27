@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import "./CalendarView.css"; // Optional for custom styling
+import "./CalendarView.css";
 import { motion } from "framer-motion";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "react-bootstrap";
 
+// Sample data for visual indicators
 const volatilityData = {
   "2025-07-01": 0.2,
   "2025-07-05": 0.4,
@@ -22,21 +23,22 @@ const liquidityData = {
   "2025-07-20": 0.9,
 };
 const performanceData = {
-  "2025-07-01": 0.03, // +3%
-  "2025-07-05": -0.01, // -1%
+  "2025-07-01": 0.03,
+  "2025-07-05": -0.01,
   "2025-07-10": 0.07,
   "2025-07-15": -0.05,
   "2025-07-20": 0.12,
 };
 const CalendarView = () => {
-  const [viewMode, setViewMode] = useState("daily");
-  const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [viewMode, setViewMode] = useState("daily"); // Calendar view mode: daily, weekly, or monthly
+  const { theme, toggleTheme } = useTheme(); // Custom theme context for light/dark mode
+  const navigate = useNavigate(); // React Router navigation
+  const [currentMonth, setCurrentMonth] = useState(dayjs()); // Current month state
 
+  // Calculate the range of the calendar grid (starts from Sunday before 1st, ends on Saturday after last day)
   const startDay = currentMonth.startOf("month").startOf("week");
   const endDay = currentMonth.endOf("month").endOf("week");
-
+  // Generate the calendar layout based on selected view mode
   const generateCalendar = () => {
     if (viewMode === "daily") {
       let date = startDay.clone();
@@ -60,7 +62,7 @@ const CalendarView = () => {
       const end = currentMonth.endOf("month").endOf("week");
 
       while (date.isBefore(end)) {
-        calendar.push([date.clone()]); // One cell per week
+        calendar.push([date.clone()]); // One entry per week
         date = date.add(1, "week");
       }
 
@@ -68,11 +70,11 @@ const CalendarView = () => {
     }
 
     if (viewMode === "monthly") {
-      // Just one cell: the current month
       return [[currentMonth.startOf("month")]];
     }
   };
 
+  // Aggregates volatility, liquidity, and performance data over a given date range
   const aggregateMetrics = (start, end) => {
     let days = [];
     let date = start.clone();
@@ -101,12 +103,16 @@ const CalendarView = () => {
       avgPerformance: avg(perfs),
     };
   };
+
+  // Returns background class based on average volatility
   const getVolatilityColor = (date) => {
     let start = date.clone();
-    let end = date.clone();
-
-    if (viewMode === "weekly") end = start.clone().add(6, "day");
-    if (viewMode === "monthly") end = start.clone().endOf("month");
+    let end =
+      viewMode === "weekly"
+        ? start.clone().add(6, "day")
+        : viewMode === "monthly"
+        ? start.clone().endOf("month")
+        : start;
 
     const { avgVolatility: vol } = aggregateMetrics(start, end);
     if (vol === undefined) return "";
@@ -115,36 +121,45 @@ const CalendarView = () => {
     return "bg-danger";
   };
 
+  // Returns border styles based on average liquidity
   const getLiquidityStyle = (date) => {
     let start = date.clone();
-    let end = date.clone();
-    if (viewMode === "weekly") end = start.clone().add(6, "day");
-    if (viewMode === "monthly") end = start.clone().endOf("month");
+    let end =
+      viewMode === "weekly"
+        ? start.clone().add(6, "day")
+        : viewMode === "monthly"
+        ? start.clone().endOf("month")
+        : start;
 
     const { avgLiquidity: liquidity } = aggregateMetrics(start, end);
     if (liquidity === undefined) return {};
-    if (liquidity < 0.4) return { border: "2px solid #007bff" };
-    if (liquidity < 0.7) return { border: "2px dashed #fd7e14" };
-    return { border: "3px solid #000" };
+    if (liquidity < 0.4) return { border: "2px solid #007bff" }; // Blue solid
+    if (liquidity < 0.7) return { border: "2px dashed #fd7e14" }; // Orange dashed
+    return { border: "3px solid #000" }; // Black thick
   };
 
+  // Returns background overlay style based on average performance
   const getPerformanceStyle = (date) => {
     let start = date.clone();
-    let end = date.clone();
-    if (viewMode === "weekly") end = start.clone().add(6, "day");
-    if (viewMode === "monthly") end = start.clone().endOf("month");
+    let end =
+      viewMode === "weekly"
+        ? start.clone().add(6, "day")
+        : viewMode === "monthly"
+        ? start.clone().endOf("month")
+        : start;
 
     const { avgPerformance: perf } = aggregateMetrics(start, end);
     if (perf === undefined) return {};
-    const alpha = Math.min(Math.abs(perf) * 2, 0.6);
+    const alpha = Math.min(Math.abs(perf) * 2, 0.6); // Cap transparency
     const color =
       perf >= 0 ? `rgba(0, 128, 0, ${alpha})` : `rgba(255, 0, 0, ${alpha})`;
 
     return { backgroundColor: color };
   };
 
-  const calendar = generateCalendar();
+  const calendar = generateCalendar(); // Build calendar matrix for rendering
 
+  // Redirect to dashboard with selected date
   const goToDashboard = (date) => {
     let selected = date;
     if (viewMode === "weekly") selected = date.clone().startOf("week");
@@ -154,6 +169,7 @@ const CalendarView = () => {
 
   return (
     <div>
+      {/* Theme toggle button */}
       <div className="mb-3 d-flex justify-content-end">
         <Button variant="outline-secondary" onClick={toggleTheme}>
           {theme === "light" ? (
@@ -167,6 +183,8 @@ const CalendarView = () => {
           )}
         </Button>
       </div>
+
+      {/* View mode buttons */}
       <div className="btn-group mb-3">
         {["daily", "weekly", "monthly"].map((mode) => (
           <Button
@@ -178,6 +196,8 @@ const CalendarView = () => {
           </Button>
         ))}
       </div>
+
+      {/* Month navigation */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <button
           className="btn btn-outline-primary"
@@ -194,6 +214,7 @@ const CalendarView = () => {
         </button>
       </div>
 
+      {/* Calendar Table */}
       <div className="table-responsive">
         <table className="table table-bordered text-center calendar-table">
           <thead className="table-light">
@@ -211,11 +232,12 @@ const CalendarView = () => {
                   const isCurrentMonth = day.month() === currentMonth.month();
                   const dateKey = day.format("YYYY-MM-DD");
 
-                  const tooltip = `📊 Volatility: ${
+                  // Tooltip showing metrics for each day
+                  const tooltip = `Volatility: ${
                     volatilityData[dateKey] ?? "N/A"
                   }
-                  💧 Liquidity: ${liquidityData[dateKey] ?? "N/A"}
-                  📈 Performance: ${
+Liquidity: ${liquidityData[dateKey] ?? "N/A"}
+Performance: ${
                     performanceData[dateKey] !== undefined
                       ? (performanceData[dateKey] * 100).toFixed(2) + "%"
                       : "N/A"
